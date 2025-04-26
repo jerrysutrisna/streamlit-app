@@ -5,10 +5,10 @@ import pickle
 import os
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
-import plotly.express as px
-import plotly.graph_objects as go
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Barang Forecasting", page_icon="📊")
 st.title("Barang Forecasting with SARIMA")
@@ -51,22 +51,19 @@ if uploaded_file:
             2024: "modelsarima2024.pkl"
         }
 
-        # Tambahkan dominant_year ke list jika belum ada
         year_options = list(model_map.keys())
         if dominant_year not in year_options:
             year_options.append(dominant_year)
 
-        # Allow user to override dominant year
         selected_year = st.selectbox(
             "Pilih tahun model SARIMA (override jika perlu):",
             options=sorted(year_options),
             index=year_options.index(dominant_year)
         )
 
-        # Siapkan nama file model
         MODEL_FILE = model_map.get(selected_year, f"modelsarima{selected_year}.pkl")
 
-         # Visualisasi bulanan
+        # Visualisasi bulanan
         st.subheader("📅 Jumlah Barang per Bulan")
         monthly_data = input_data["Jumlah"].resample("M").sum()
         st.dataframe(monthly_data.reset_index().rename(columns={"Jumlah": "Total Jumlah"}))
@@ -176,50 +173,51 @@ if uploaded_file:
             st.subheader("📋 Tabel Hasil Prediksi")
             st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.2f}"}))
 
+            # Tambahan Dashboard Visualisasi
             st.markdown("---")
-    st.header("📊 Dashboard Penjualan Produk")
+            st.header("📊 Dashboard Penjualan Produk")
 
-    col_kpi1, col_kpi2 = st.columns(2)
-    with col_kpi1:
-        st.subheader("Kinerja Prediksi")
-        st.metric("Total Prediksi", f"{total_prediksi:,.0f}")
-        st.metric("Rata-rata / bulan", f"{mean_prediksi:,.2f}")
+            col_kpi1, col_kpi2 = st.columns(2)
+            with col_kpi1:
+                st.subheader("Kinerja Prediksi")
+                st.metric("Total Prediksi", f"{total_prediksi:,.0f}")
+                st.metric("Rata-rata / bulan", f"{mean_prediksi:,.2f}")
 
-    with col_kpi2:
-        st.subheader("Pertumbuhan Prediksi")
-        st.metric("Growth Rate (%)", f"{growth_rate:.2f}%")
+            with col_kpi2:
+                st.subheader("Pertumbuhan Prediksi")
+                st.metric("Growth Rate (%)", f"{growth_rate:.2f}%")
 
-    st.subheader("Status Prediksi Bulanan")
-    lead_status_fig = go.Figure()
-    lead_status_fig.add_trace(go.Bar(
-        x=forecast_df["Tanggal"].dt.strftime("%b %Y"),
-        y=forecast_df["Prediksi Jumlah"],
-        name="Prediksi",
-        marker_color="steelblue"
-    ))
-    lead_status_fig.update_layout(barmode='stack', xaxis_title="Bulan", yaxis_title="Jumlah Prediksi")
-    st.plotly_chart(lead_status_fig, use_container_width=True)
+            st.subheader("Status Prediksi Bulanan")
+            lead_status_fig = go.Figure()
+            lead_status_fig.add_trace(go.Bar(
+                x=forecast_df["Tanggal"].dt.strftime("%b %Y"),
+                y=forecast_df["Prediksi Jumlah"],
+                name="Prediksi",
+                marker_color="steelblue"
+            ))
+            lead_status_fig.update_layout(barmode='stack', xaxis_title="Bulan", yaxis_title="Jumlah Prediksi")
+            st.plotly_chart(lead_status_fig, use_container_width=True)
 
-    st.subheader("Trend Pendapatan Campaign")
-    fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi Barang per Bulan")
-    st.plotly_chart(fig_campaign, use_container_width=True)
+            st.subheader("Trend Pendapatan Campaign")
+            fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi Barang per Bulan")
+            st.plotly_chart(fig_campaign, use_container_width=True)
 
-    st.subheader("Pendapatan Tahunan (Akumulasi)")
-    forecast_df["Tahun"] = forecast_df["Tanggal"].dt.year
-    yearly_income = forecast_df.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
-    fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True)
-    st.plotly_chart(fig_year, use_container_width=True)
+            st.subheader("Pendapatan Tahunan (Akumulasi)")
+            forecast_df["Tahun"] = forecast_df["Tanggal"].dt.year
+            yearly_income = forecast_df.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
+            fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True)
+            st.plotly_chart(fig_year, use_container_width=True)
 
-    st.subheader("Distribusi Pembelian")
-    kategori = ["Internet", "Fiber Optic", "5G", "Ethernet", "Router"]
-    nilai = np.random.randint(50, 500, size=len(kategori))  # Dummy data distribusi
-    fig_dist = px.treemap(
-        names=kategori,
-        parents=["", "Internet", "Internet", "Internet", "Internet"],
-        values=nilai,
-        title="Distribusi Paket"
-    )
-    st.plotly_chart(fig_dist, use_container_width=True)
+            st.subheader("Distribusi Pembelian")
+            kategori = ["Internet", "Fiber Optic", "5G", "Ethernet", "Router"]
+            nilai = np.random.randint(50, 500, size=len(kategori))
+            fig_dist = px.treemap(
+                names=kategori,
+                parents=["", "Internet", "Internet", "Internet", "Internet"],
+                values=nilai,
+                title="Distribusi Paket"
+            )
+            st.plotly_chart(fig_dist, use_container_width=True)
 
     except Exception as e:
         st.error(f"Terjadi kesalahan saat memproses file: {e}")
