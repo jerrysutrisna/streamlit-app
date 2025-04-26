@@ -10,8 +10,8 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Barang Forecasting", page_icon="\ud83d\udcca")
-st.title("Barang Forecasting with SARIMA (Refactor Version)")
+st.set_page_config(page_title="Barang Forecasting", page_icon="📊")
+st.title("Barang Forecasting with SARIMA")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
@@ -30,122 +30,210 @@ if uploaded_file:
             st.stop()
 
         # Clean and prepare
-        input_data["Jumlah"] = input_data["Jumlah"].astype(str).str.replace(r'\\D', '', regex=True).astype(float)
+        input_data["Jumlah"] = input_data["Jumlah"].astype(str).str.replace(r'\D', '', regex=True).astype(float)
         input_data.dropna(inplace=True)
         input_data["Tanggal"] = pd.to_datetime(input_data["Tanggal"])
-        input_data = input_data.sort_values("Tanggal").drop_duplicates(subset="Tanggal")
+        input_data = input_data.sort_values("Tanggal")
+
+        # Drop duplicate Tanggal
+        input_data = input_data.drop_duplicates(subset="Tanggal")
         input_data.set_index("Tanggal", inplace=True)
 
         # Dominant year detection
-        dominant_year = int(input_data.index.year.mode()[0])
+        dominant_year = int(pd.Series(input_data.index.year).mode()[0])
         st.info(f"Data terbanyak berasal dari tahun: {dominant_year}")
 
-        # Model file mapping
-        model_map = {2022: "modelsarima2022.pkl", 2023: "modelsarima2023.pkl", 2024: "modelsarima2024.pkl"}
-        MODEL_FILE = model_map.get(dominant_year, f"modelsarima{dominant_year}.pkl")
+        # Map model files
+        model_map = {
+            2022: "modelsarima2022.pkl",
+            2023: "modelsarima2023.pkl",
+            2024: "modelsarima2024.pkl"
+        }
 
-        # Visualisasi Aktual
-        st.header("\ud83d\udcc5 Visualisasi Data Aktual")
+        year_options = list(model_map.keys())
+        if dominant_year not in year_options:
+            year_options.append(dominant_year)
+
+        selected_year = st.selectbox(
+            "Pilih tahun model SARIMA (override jika perlu):",
+            options=sorted(year_options),
+            index=year_options.index(dominant_year)
+        )
+
+        MODEL_FILE = model_map.get(selected_year, f"modelsarima{selected_year}.pkl")
+
+        # Visualisasi bulanan
+        st.subheader("📅 Jumlah Barang per Bulan")
         monthly_data = input_data["Jumlah"].resample("M").sum()
-        st.subheader("Total Barang per Bulan")
-        fig_actual = px.line(monthly_data, labels={"value":"Jumlah", "Tanggal":"Bulan"}, title="Data Aktual per Bulan")
-        st.plotly_chart(fig_actual, use_container_width=True)
-
-        # Uji Stasioneritas
-        st.header("\ud83d\udd22 Uji Stasioneritas (ADF Test)")
+        st.dataframe(monthly_data.reset_index().rename(columns={"Jumlah": "Total Jumlah"}))
+        st.bar_chart(monthly_data)
+        st.line_chart(monthly_data)
+        
+        # ADF Test
+        st.subheader("Uji Stasioneritas (ADF Test)")
         adf_result = adfuller(input_data["Jumlah"])
         st.write(f"ADF Statistic: {adf_result[0]}")
         st.write(f"p-value: {adf_result[1]}")
+        st.write("Critical Values:")
+        for key, value in adf_result[4].items():
+            st.write(f"   {key}: {value}")
         if adf_result[1] > 0.05:
             st.warning("Data tidak stasioner, pertimbangkan differencing!")
         else:
             st.success("Data sudah stasioner!")
 
         # Plot ACF & PACF
-        st.subheader("Plot ACF dan PACF")
+        st.subheader("Plot ACF & PACF")
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
         plot_acf(input_data["Jumlah"], ax=axes[0])
         plot_pacf(input_data["Jumlah"], ax=axes[1])
         st.pyplot(fig)
 
-        # Parameter SARIMA
-        st.header("\ud83d\udd22 Parameter SARIMA")
-        p = st.number_input("p (AR)", min_value=0, value=1)
-        d = st.number_input("d (Differencing)", min_value=0, value=1)
-        q = st.number_input("q (MA)", min_value=0, value=1)
-        P = st.number_input("P (Seasonal AR)", min_value=0, value=1)
-        D = st.number_input("D (Seasonal Diff)", min_value=0, value=1)
-        Q = st.number_input("Q (Seasonal MA)", min_value=0, value=1)
-        s = st.number_input("Seasonality (s)", min_value=1, value=12)
+        # Input parameter SARIMA
+        st.subheader("Parameter SARIMA")
+        p = st.number_input("Masukkan nilai p (AR)", min_value=0, value=1)
+        d = st.number_input("Masukkan nilai d (Diff)", min_value=0, value=1)
+        q = st.number_input("Masukkan nilai q (MA)", min_value=0, value=1)
+        P = st.number_input("Masukkan nilai P (Seasonal AR)", min_value=0, value=1)
+        D = st.number_input("Masukkan nilai D (Seasonal Diff)", min_value=0, value=1)
+        Q = st.number_input("Masukkan nilai Q (Seasonal MA)", min_value=0, value=1)
+        s = st.number_input("Masukkan nilai s (Seasonality)", min_value=1, value=12)
 
-        # Load or Train Model
+        # Load or train model
         if os.path.exists(MODEL_FILE):
             with open(MODEL_FILE, "rb") as f:
                 model_fit = pickle.load(f)
             st.success(f"Model {MODEL_FILE} berhasil dimuat.")
         else:
-            st.warning(f"Model {MODEL_FILE} tidak ditemukan. Membuat model baru...")
-            model = sm.tsa.statespace.SARIMAX(input_data["Jumlah"],
-                                              order=(p, d, q),
-                                              seasonal_order=(P, D, Q, s),
-                                              enforce_stationarity=False,
-                                              enforce_invertibility=False)
-            model_fit = model.fit(disp=False)
-            with open(MODEL_FILE, "wb") as f:
-                pickle.dump(model_fit, f)
-            st.success(f"Model baru disimpan sebagai {MODEL_FILE}")
+            st.warning(f"Model file untuk tahun {selected_year} ({MODEL_FILE}) tidak ditemukan.")
+            st.info("Model akan dibuat dari data yang tersedia dengan parameter SARIMA yang Anda masukkan.")
+            try:
+                sarima_model = sm.tsa.statespace.SARIMAX(
+                    input_data["Jumlah"],
+                    order=(p, d, q),
+                    seasonal_order=(P, D, Q, s),
+                    enforce_stationarity=False,
+                    enforce_invertibility=False                         
+                )
+                model_fit = sarima_model.fit(disp=False)
+                st.success("Model SARIMA berhasil dibuat.")
+
+                # Save model
+                with open(MODEL_FILE, "wb") as f:
+                    pickle.dump(model_fit, f)
+                st.success(f"Model baru berhasil disimpan sebagai {MODEL_FILE}.")
+
+            except Exception as train_err:
+                st.error(f"Gagal membuat model SARIMA: {train_err}")
+                st.stop()
 
         # Forecast
-        st.header("\ud83d\udcca Peramalan")
-        forecast_years = st.slider("Jumlah Tahun Prediksi", 1, 5, 1)
-        periods = forecast_years * 12
+        st.subheader("Peramalan")
+        forecast_years = st.slider("Pilih jumlah tahun untuk peramalan:", 1, 5, 1)
+        input_periods = forecast_years * 12
 
-        if st.button("\ud83d\udca1 Mulai Prediksi"):
-            forecast = model_fit.get_forecast(steps=periods)
-            pred_mean = forecast.predicted_mean
-            pred_index = pd.date_range(start=input_data.index[-1], periods=periods+1, freq='M')[1:]
-            forecast_df = pd.DataFrame({"Tanggal": pred_index, "Prediksi Jumlah": pred_mean.values})
+        if st.button("Predict"):
+            forecast_result = model_fit.get_forecast(steps=input_periods)
+            forecast_mean = forecast_result.predicted_mean
+            last_date = input_data.index[-1]
+            forecast_index = pd.date_range(start=last_date, periods=input_periods + 1, freq='M')[1:]
+            forecast_df = pd.DataFrame({'Tanggal': forecast_index, 'Prediksi Jumlah': forecast_mean.values})
 
-            # Visualisasi Prediksi
-            st.subheader("\ud83d\udcc8 Hasil Prediksi")
-            fig_pred = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Prediksi Barang per Bulan")
-            st.plotly_chart(fig_pred, use_container_width=True)
+            st.subheader("📈 Hasil Peramalan")
+            st.line_chart(forecast_df.set_index("Tanggal"))
 
-            st.subheader("\ud83d\udcc8 Gabungan Aktual & Prediksi")
-            fig_combined = go.Figure()
-            fig_combined.add_trace(go.Scatter(x=input_data.index, y=input_data["Jumlah"], name="Aktual", mode="lines"))
-            fig_combined.add_trace(go.Scatter(x=forecast_df["Tanggal"], y=forecast_df["Prediksi Jumlah"], name="Prediksi", mode="lines"))
-            fig_combined.update_layout(title="Data Aktual vs Prediksi")
-            st.plotly_chart(fig_combined, use_container_width=True)
-
-            # Dashboard Prediksi
-            st.header("\ud83d\udcca Ringkasan Prediksi")
-            total = forecast_df["Prediksi Jumlah"].sum()
-            mean = forecast_df["Prediksi Jumlah"].mean()
-            growth = ((forecast_df["Prediksi Jumlah"].iloc[-1] - forecast_df["Prediksi Jumlah"].iloc[0]) / forecast_df["Prediksi Jumlah"].iloc[0]) * 100
-
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Total Prediksi", f"{total:,.0f}")
-            col2.metric("Rata-rata per Bulan", f"{mean:,.2f}")
-            col3.metric("Growth Rate", f"{growth:.2f}%")
-
-            st.subheader("Distribusi Prediksi per Tahun")
-            forecast_df["Tahun"] = forecast_df["Tanggal"].dt.year
-            yearly_summary = forecast_df.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
-            fig_yearly = px.bar(yearly_summary, x="Tahun", y="Prediksi Jumlah", title="Total Prediksi per Tahun")
-            st.plotly_chart(fig_yearly, use_container_width=True)
-
-            st.subheader("Distribusi Prediksi per Kuartal")
-            forecast_df["Kuartal"] = forecast_df["Tanggal"].dt.to_period("Q").astype(str)
-            quarterly_summary = forecast_df.groupby("Kuartal")["Prediksi Jumlah"].sum().reset_index()
-            fig_quarter = px.pie(quarterly_summary, names="Kuartal", values="Prediksi Jumlah", hole=0.4, title="Distribusi per Kuartal")
-            st.plotly_chart(fig_quarter, use_container_width=True)
-
-            # Download Forecast
             output_filename = "forecast_results.xlsx"
             forecast_df.to_excel(output_filename, index=False)
-            with open(output_filename, "rb") as f:
-                st.download_button("\ud83d\udcbe Download Forecast", f, file_name=output_filename)
+            with open(output_filename, "rb") as output_file:
+                st.download_button("Download Forecast Results", output_file, file_name=output_filename)
+
+            st.subheader("📊 Dashboard Visualisasi Hasil Prediksi")
+            combined_df = pd.concat([
+                input_data["Jumlah"].rename("Jumlah Aktual"),
+                forecast_df.set_index("Tanggal")["Prediksi Jumlah"]
+            ], axis=1)
+            st.line_chart(combined_df)
+
+            total_prediksi = forecast_df["Prediksi Jumlah"].sum()
+            mean_prediksi = forecast_df["Prediksi Jumlah"].mean()
+            growth_rate = ((forecast_df["Prediksi Jumlah"].iloc[-1] - forecast_df["Prediksi Jumlah"].iloc[0]) / forecast_df["Prediksi Jumlah"].iloc[0]) * 100
+
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Prediksi", f"{total_prediksi:,.0f}")
+            col2.metric("Rata-rata / bulan", f"{mean_prediksi:,.2f}")
+            col3.metric("Growth Rate", f"{growth_rate:.2f}%", delta=f"{growth_rate:.2f}%")
+
+            st.subheader("📊 Bar Chart")
+            st.bar_chart(forecast_df.set_index("Tanggal"))
+
+            st.subheader("🌊 Area Chart")
+            st.area_chart(forecast_df.set_index("Tanggal"))
+
+            st.subheader("📋 Tabel Hasil Prediksi")
+            st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.2f}"}))
+
+            # Tambahan Dashboard Visualisasi
+            st.markdown("---")
+            st.header("📊 Dashboard Penjualan Produk")
+
+            col_kpi1, col_kpi2 = st.columns(2)
+            with col_kpi1:
+                st.subheader("Kinerja Prediksi")
+                st.metric("Total Prediksi", f"{total_prediksi:,.0f}")
+                st.metric("Rata-rata / bulan", f"{mean_prediksi:,.2f}")
+
+            with col_kpi2:
+                st.subheader("Pertumbuhan Prediksi")
+                st.metric("Growth Rate (%)", f"{growth_rate:.2f}%")
+
+            # Visualisasi Distribusi Prediksi per Bulan
+            st.subheader("Status Prediksi Bulanan")
+            lead_status_fig = go.Figure()
+            lead_status_fig.add_trace(go.Bar(
+                x=forecast_df["Tanggal"].dt.strftime("%b %Y"),
+                y=forecast_df["Prediksi Jumlah"],
+                name="Prediksi",
+                marker_color="steelblue"
+            ))
+            lead_status_fig.update_layout(barmode='stack', xaxis_title="Bulan", yaxis_title="Jumlah Prediksi")
+            st.plotly_chart(lead_status_fig, use_container_width=True)
+
+            # Trend Pendapatan Campaign
+            st.subheader("Trend Prediksi Barang per Bulan")
+            fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi Barang per Bulan")
+            st.plotly_chart(fig_campaign, use_container_width=True)
+
+            # Pendapatan Tahunan (Akumulasi)
+            forecast_df["Tahun"] = forecast_df["Tanggal"].dt.year
+            yearly_income = forecast_df.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
+            fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True)
+            st.plotly_chart(fig_year, use_container_width=True)
+
+            # Distribusi Prediksi per Kuartal
+            st.subheader("Distribusi Prediksi per Kuartal")
+            forecast_df["Kuartal"] = forecast_df["Tanggal"].dt.to_period("Q").astype(str)
+            kuartal_summary = forecast_df.groupby("Kuartal")["Prediksi Jumlah"].sum().reset_index()
+
+            fig_kuartal = px.pie(
+                kuartal_summary,
+                names="Kuartal",
+                values="Prediksi Jumlah",
+                title="Distribusi Prediksi per Kuartal",
+                hole=0.4
+            )
+            st.plotly_chart(fig_kuartal, use_container_width=True)
+
+            # Proporsi Prediksi per Tahun (jika multi-year)
+            if forecast_years > 1:
+                st.subheader("Proporsi Prediksi per Tahun")
+                fig_proporsi = px.pie(
+                    yearly_income,
+                    names="Tahun",
+                    values="Prediksi Jumlah",
+                    title="Proporsi Prediksi Tahunan",
+                    hole=0.3
+                )
+                st.plotly_chart(fig_proporsi, use_container_width=True)
 
     except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+        st.error(f"Terjadi kesalahan saat memproses file: {e}")
