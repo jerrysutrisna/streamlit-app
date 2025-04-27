@@ -73,7 +73,13 @@ if uploaded_file:
             markers=True,
             hover_data={"Tanggal": "|%B %Y", "Total Jumlah": ":,.0f"}
         )
-        fig_monthly.update_layout(xaxis_title="Bulan", yaxis_title="Jumlah")
+        fig_monthly.update_layout(
+            xaxis_title="Bulan",
+            yaxis_title="Jumlah",
+            hovermode="x unified",
+            dragmode="select",
+            selectdirection="h"
+        )
         st.plotly_chart(fig_monthly, use_container_width=True)
 
         # ADF Test
@@ -95,7 +101,7 @@ if uploaded_file:
         # Hitung nilai ACF dan PACF
         acf_values = sm.tsa.stattools.acf(input_data["Jumlah"], nlags=40)
         pacf_values = sm.tsa.stattools.pacf(input_data["Jumlah"], nlags=40)
-        
+
         # Buat figure ACF
         acf_fig = px.bar(
             x=list(range(len(acf_values))),
@@ -103,8 +109,13 @@ if uploaded_file:
             labels={'x': 'Lag', 'y': 'ACF'},
             title="Autocorrelation (ACF)"
         )
-        acf_fig.update_layout(showlegend=False)
-        
+        acf_fig.update_layout(
+            hovermode="x unified",
+            dragmode="select",
+            selectdirection="h",
+            showlegend=False
+        )
+
         # Buat figure PACF
         pacf_fig = px.bar(
             x=list(range(len(pacf_values))),
@@ -112,15 +123,19 @@ if uploaded_file:
             labels={'x': 'Lag', 'y': 'PACF'},
             title="Partial Autocorrelation (PACF)"
         )
-        pacf_fig.update_layout(showlegend=False)
-        
+        pacf_fig.update_layout(
+            hovermode="x unified",
+            dragmode="select",
+            selectdirection="h",
+            showlegend=False
+        )
+
         # Tampilkan 2 grafik sejajar
         col1, col2 = st.columns(2)
         with col1:
             st.plotly_chart(acf_fig, use_container_width=True)
         with col2:
             st.plotly_chart(pacf_fig, use_container_width=True)
-
 
         # Input parameter SARIMA
         st.subheader("Parameter SARIMA")
@@ -185,7 +200,13 @@ if uploaded_file:
                 markers=True,
                 hover_data={"Tanggal": "|%B %Y", "Prediksi Jumlah": ":,.0f"}
             )
-            fig_forecast.update_layout(xaxis_title="Tanggal", yaxis_title="Jumlah Prediksi")
+            fig_forecast.update_layout(
+                xaxis_title="Tanggal",
+                yaxis_title="Jumlah Prediksi",
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(fig_forecast, use_container_width=True)
 
             # Download forecast
@@ -208,7 +229,13 @@ if uploaded_file:
                 title="Aktual vs Prediksi Jumlah Barang",
                 markers=True
             )
-            fig_combined.update_layout(xaxis_title="Tanggal", yaxis_title="Jumlah")
+            fig_combined.update_layout(
+                xaxis_title="Tanggal",
+                yaxis_title="Jumlah",
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(fig_combined, use_container_width=True)
 
             # KPI Metrics
@@ -224,11 +251,21 @@ if uploaded_file:
             # Bar Chart
             st.subheader("📊 Bar Chart")
             fig_bar = px.bar(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Bar Chart Prediksi")
+            fig_bar.update_layout(
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(fig_bar, use_container_width=True)
 
             # Area Chart
             st.subheader("🌊 Area Chart")
             fig_area = px.area(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Area Chart Prediksi")
+            fig_area.update_layout(
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(fig_area, use_container_width=True)
 
             # Table
@@ -243,11 +280,21 @@ if uploaded_file:
                 y="Prediksi Jumlah",
                 title="Distribusi Prediksi per Bulan"
             )
+            lead_status_fig.update_layout(
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(lead_status_fig, use_container_width=True)
 
             # Trend Prediksi Barang
             st.subheader("Trend Prediksi Barang per Bulan")
             fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi per Bulan")
+            fig_campaign.update_layout(
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(fig_campaign, use_container_width=True)
 
             # Pendapatan Tahunan (Akumulasi)
@@ -256,6 +303,11 @@ if uploaded_file:
 
             st.subheader("Pendapatan Prediksi Tahunan")
             fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True, title="Pendapatan Prediksi Tahunan")
+            fig_year.update_layout(
+                hovermode="x unified",
+                dragmode="select",
+                selectdirection="h"
+            )
             st.plotly_chart(fig_year, use_container_width=True)
 
             # Distribusi Kuartal
@@ -270,6 +322,7 @@ if uploaded_file:
                 title="Distribusi Prediksi per Kuartal",
                 hole=0.4
             )
+            fig_kuartal.update_layout(hovermode="closest")
             st.plotly_chart(fig_kuartal, use_container_width=True)
 
             # Proporsi Tahun (jika multi-year)
@@ -282,6 +335,7 @@ if uploaded_file:
                     title="Proporsi Prediksi per Tahun",
                     hole=0.3
                 )
+                fig_proporsi.update_layout(hovermode="closest")
                 st.plotly_chart(fig_proporsi, use_container_width=True)
 
     except Exception as e:
