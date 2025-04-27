@@ -91,11 +91,10 @@ if uploaded_file:
 
         # Plot ACF & PACF Interaktif
         st.subheader("Plot ACF & PACF")
-        acf_values = sm.tsa.stattools.acf(input_data["Jumlah"], nlags=40)
-        pacf_values = sm.tsa.stattools.pacf(input_data["Jumlah"], nlags=40)
-
-        acf_fig = px.bar(x=list(range(len(acf_values))), y=acf_values, title="Autocorrelation (ACF)")
-        pacf_fig = px.bar(x=list(range(len(pacf_values))), y=pacf_values, title="Partial Autocorrelation (PACF)")
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        plot_acf(input_data["Jumlah"], ax=axes[0])
+        plot_pacf(input_data["Jumlah"], ax=axes[1])
+        st.pyplot(fig)
 
         # Input parameter SARIMA
         st.subheader("Parameter SARIMA")
