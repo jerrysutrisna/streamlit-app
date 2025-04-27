@@ -68,7 +68,7 @@ if uploaded_file:
         st.dataframe(monthly_data.reset_index().rename(columns={"Jumlah": "Total Jumlah"}))
         st.bar_chart(monthly_data)
         st.line_chart(monthly_data)
-        
+
         # ADF Test
         st.subheader("Uji Stasioneritas (ADF Test)")
         adf_result = adfuller(input_data["Jumlah"])
@@ -137,7 +137,11 @@ if uploaded_file:
             forecast_mean = forecast_result.predicted_mean
             last_date = input_data.index[-1]
             forecast_index = pd.date_range(start=last_date, periods=input_periods + 1, freq='M')[1:]
-            forecast_df = pd.DataFrame({'Tanggal': forecast_index, 'Prediksi Jumlah': forecast_mean.values})
+
+            forecast_df = pd.DataFrame({
+                'Tanggal': forecast_index,
+                'Prediksi Jumlah': np.round(forecast_mean.values).astype(int)
+            })
 
             st.subheader("📈 Hasil Peramalan")
             st.line_chart(forecast_df.set_index("Tanggal"))
@@ -160,7 +164,7 @@ if uploaded_file:
 
             col1, col2, col3 = st.columns(3)
             col1.metric("Total Prediksi", f"{total_prediksi:,.0f}")
-            col2.metric("Rata-rata / bulan", f"{mean_prediksi:,.2f}")
+            col2.metric("Rata-rata / bulan", f"{mean_prediksi:,.0f}")
             col3.metric("Growth Rate", f"{growth_rate:.2f}%", delta=f"{growth_rate:.2f}%")
 
             st.subheader("📊 Bar Chart")
@@ -170,7 +174,7 @@ if uploaded_file:
             st.area_chart(forecast_df.set_index("Tanggal"))
 
             st.subheader("📋 Tabel Hasil Prediksi")
-            st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.2f}"}))
+            st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.0f}"}))
 
             # Tambahan Dashboard Visualisasi
             st.markdown("---")
@@ -180,7 +184,7 @@ if uploaded_file:
             with col_kpi1:
                 st.subheader("Kinerja Prediksi")
                 st.metric("Total Prediksi", f"{total_prediksi:,.0f}")
-                st.metric("Rata-rata / bulan", f"{mean_prediksi:,.2f}")
+                st.metric("Rata-rata / bulan", f"{mean_prediksi:,.0f}")
 
             with col_kpi2:
                 st.subheader("Pertumbuhan Prediksi")
