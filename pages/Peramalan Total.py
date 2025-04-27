@@ -97,9 +97,6 @@ if uploaded_file:
         acf_fig = px.bar(x=list(range(len(acf_values))), y=acf_values, title="Autocorrelation (ACF)")
         pacf_fig = px.bar(x=list(range(len(pacf_values))), y=pacf_values, title="Partial Autocorrelation (PACF)")
 
-        st.plotly_chart(acf_fig, use_container_width=True)
-        st.plotly_chart(pacf_fig, use_container_width=True)
-
         # Input parameter SARIMA
         st.subheader("Parameter SARIMA")
         p = st.number_input("Masukkan nilai p (AR)", min_value=0, value=1)
