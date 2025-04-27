@@ -91,10 +91,36 @@ if uploaded_file:
 
         # Plot ACF & PACF Interaktif
         st.subheader("Plot ACF & PACF")
-        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-        plot_acf(input_data["Jumlah"], ax=axes[0])
-        plot_pacf(input_data["Jumlah"], ax=axes[1])
-        st.pyplot(fig)
+
+        # Hitung nilai ACF dan PACF
+        acf_values = sm.tsa.stattools.acf(input_data["Jumlah"], nlags=40)
+        pacf_values = sm.tsa.stattools.pacf(input_data["Jumlah"], nlags=40)
+        
+        # Buat figure ACF
+        acf_fig = px.bar(
+            x=list(range(len(acf_values))),
+            y=acf_values,
+            labels={'x': 'Lag', 'y': 'ACF'},
+            title="Autocorrelation (ACF)"
+        )
+        acf_fig.update_layout(showlegend=False)
+        
+        # Buat figure PACF
+        pacf_fig = px.bar(
+            x=list(range(len(pacf_values))),
+            y=pacf_values,
+            labels={'x': 'Lag', 'y': 'PACF'},
+            title="Partial Autocorrelation (PACF)"
+        )
+        pacf_fig.update_layout(showlegend=False)
+        
+        # Tampilkan 2 grafik sejajar
+        col1, col2 = st.columns(2)
+        with col1:
+            st.plotly_chart(acf_fig, use_container_width=True)
+        with col2:
+            st.plotly_chart(pacf_fig, use_container_width=True)
+
 
         # Input parameter SARIMA
         st.subheader("Parameter SARIMA")
