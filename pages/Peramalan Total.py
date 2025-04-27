@@ -3,10 +3,12 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-import plotly.express as px
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Barang Forecasting", page_icon="📊")
 st.title("Barang Forecasting with SARIMA")
@@ -63,18 +65,9 @@ if uploaded_file:
         # Visualisasi bulanan
         st.subheader("📅 Jumlah Barang per Bulan")
         monthly_data = input_data["Jumlah"].resample("M").sum()
-        monthly_df = monthly_data.reset_index().rename(columns={"Jumlah": "Total Jumlah"})
-
-        fig_monthly = px.line(
-            monthly_df,
-            x="Tanggal",
-            y="Total Jumlah",
-            title="Total Jumlah Barang per Bulan",
-            markers=True,
-            hover_data={"Tanggal": "|%B %Y", "Total Jumlah": ":,.0f"}
-        )
-        fig_monthly.update_layout(xaxis_title="Bulan", yaxis_title="Jumlah")
-        st.plotly_chart(fig_monthly, use_container_width=True)
+        st.dataframe(monthly_data.reset_index().rename(columns={"Jumlah": "Total Jumlah"}))
+        st.bar_chart(monthly_data)
+        st.line_chart(monthly_data)
 
         # ADF Test
         st.subheader("Uji Stasioneritas (ADF Test)")
@@ -89,38 +82,12 @@ if uploaded_file:
         else:
             st.success("Data sudah stasioner!")
 
-        # Plot ACF & PACF Interaktif
+        # Plot ACF & PACF
         st.subheader("Plot ACF & PACF")
-
-        # Hitung nilai ACF dan PACF
-        acf_values = sm.tsa.stattools.acf(input_data["Jumlah"], nlags=40)
-        pacf_values = sm.tsa.stattools.pacf(input_data["Jumlah"], nlags=40)
-        
-        # Buat figure ACF
-        acf_fig = px.bar(
-            x=list(range(len(acf_values))),
-            y=acf_values,
-            labels={'x': 'Lag', 'y': 'ACF'},
-            title="Autocorrelation (ACF)"
-        )
-        acf_fig.update_layout(showlegend=False)
-        
-        # Buat figure PACF
-        pacf_fig = px.bar(
-            x=list(range(len(pacf_values))),
-            y=pacf_values,
-            labels={'x': 'Lag', 'y': 'PACF'},
-            title="Partial Autocorrelation (PACF)"
-        )
-        pacf_fig.update_layout(showlegend=False)
-        
-        # Tampilkan 2 grafik sejajar
-        col1, col2 = st.columns(2)
-        with col1:
-            st.plotly_chart(acf_fig, use_container_width=True)
-        with col2:
-            st.plotly_chart(pacf_fig, use_container_width=True)
-
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        plot_acf(input_data["Jumlah"], ax=axes[0])
+        plot_pacf(input_data["Jumlah"], ax=axes[1])
+        st.pyplot(fig)
 
         # Input parameter SARIMA
         st.subheader("Parameter SARIMA")
@@ -177,41 +144,20 @@ if uploaded_file:
             })
 
             st.subheader("📈 Hasil Peramalan")
-            fig_forecast = px.line(
-                forecast_df,
-                x="Tanggal",
-                y="Prediksi Jumlah",
-                title="Hasil Prediksi Jumlah Barang",
-                markers=True,
-                hover_data={"Tanggal": "|%B %Y", "Prediksi Jumlah": ":,.0f"}
-            )
-            fig_forecast.update_layout(xaxis_title="Tanggal", yaxis_title="Jumlah Prediksi")
-            st.plotly_chart(fig_forecast, use_container_width=True)
+            st.line_chart(forecast_df.set_index("Tanggal"))
 
-            # Download forecast
             output_filename = "forecast_results.xlsx"
             forecast_df.to_excel(output_filename, index=False)
             with open(output_filename, "rb") as output_file:
                 st.download_button("Download Forecast Results", output_file, file_name=output_filename)
 
-            # Combine actual and forecast
             st.subheader("📊 Dashboard Visualisasi Hasil Prediksi")
             combined_df = pd.concat([
                 input_data["Jumlah"].rename("Jumlah Aktual"),
                 forecast_df.set_index("Tanggal")["Prediksi Jumlah"]
-            ], axis=1).reset_index()
+            ], axis=1)
+            st.line_chart(combined_df)
 
-            fig_combined = px.line(
-                combined_df,
-                x="Tanggal",
-                y=["Jumlah Aktual", "Prediksi Jumlah"],
-                title="Aktual vs Prediksi Jumlah Barang",
-                markers=True
-            )
-            fig_combined.update_layout(xaxis_title="Tanggal", yaxis_title="Jumlah")
-            st.plotly_chart(fig_combined, use_container_width=True)
-
-            # KPI Metrics
             total_prediksi = forecast_df["Prediksi Jumlah"].sum()
             mean_prediksi = forecast_df["Prediksi Jumlah"].mean()
             growth_rate = ((forecast_df["Prediksi Jumlah"].iloc[-1] - forecast_df["Prediksi Jumlah"].iloc[0]) / forecast_df["Prediksi Jumlah"].iloc[0]) * 100
@@ -221,44 +167,53 @@ if uploaded_file:
             col2.metric("Rata-rata / bulan", f"{mean_prediksi:,.0f}")
             col3.metric("Growth Rate", f"{growth_rate:.2f}%", delta=f"{growth_rate:.2f}%")
 
-            # Bar Chart
             st.subheader("📊 Bar Chart")
-            fig_bar = px.bar(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Bar Chart Prediksi")
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.bar_chart(forecast_df.set_index("Tanggal"))
 
-            # Area Chart
             st.subheader("🌊 Area Chart")
-            fig_area = px.area(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Area Chart Prediksi")
-            st.plotly_chart(fig_area, use_container_width=True)
+            st.area_chart(forecast_df.set_index("Tanggal"))
 
-            # Table
             st.subheader("📋 Tabel Hasil Prediksi")
             st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.0f}"}))
 
-            # Distribusi Prediksi Bulanan
+            # Tambahan Dashboard Visualisasi
+            st.markdown("---")
+            st.header("📊 Dashboard Penjualan Produk")
+
+            col_kpi1, col_kpi2 = st.columns(2)
+            with col_kpi1:
+                st.subheader("Kinerja Prediksi")
+                st.metric("Total Prediksi", f"{total_prediksi:,.0f}")
+                st.metric("Rata-rata / bulan", f"{mean_prediksi:,.0f}")
+
+            with col_kpi2:
+                st.subheader("Pertumbuhan Prediksi")
+                st.metric("Growth Rate (%)", f"{growth_rate:.2f}%")
+
+            # Visualisasi Distribusi Prediksi per Bulan
             st.subheader("Status Prediksi Bulanan")
-            lead_status_fig = px.bar(
-                forecast_df,
+            lead_status_fig = go.Figure()
+            lead_status_fig.add_trace(go.Bar(
                 x=forecast_df["Tanggal"].dt.strftime("%b %Y"),
-                y="Prediksi Jumlah",
-                title="Distribusi Prediksi per Bulan"
-            )
+                y=forecast_df["Prediksi Jumlah"],
+                name="Prediksi",
+                marker_color="steelblue"
+            ))
+            lead_status_fig.update_layout(barmode='stack', xaxis_title="Bulan", yaxis_title="Jumlah Prediksi")
             st.plotly_chart(lead_status_fig, use_container_width=True)
 
-            # Trend Prediksi Barang
+            # Trend Pendapatan Campaign
             st.subheader("Trend Prediksi Barang per Bulan")
-            fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi per Bulan")
+            fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi Barang per Bulan")
             st.plotly_chart(fig_campaign, use_container_width=True)
 
             # Pendapatan Tahunan (Akumulasi)
             forecast_df["Tahun"] = forecast_df["Tanggal"].dt.year
             yearly_income = forecast_df.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
-
-            st.subheader("Pendapatan Prediksi Tahunan")
-            fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True, title="Pendapatan Prediksi Tahunan")
+            fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True)
             st.plotly_chart(fig_year, use_container_width=True)
 
-            # Distribusi Kuartal
+            # Distribusi Prediksi per Kuartal
             st.subheader("Distribusi Prediksi per Kuartal")
             forecast_df["Kuartal"] = forecast_df["Tanggal"].dt.to_period("Q").astype(str)
             kuartal_summary = forecast_df.groupby("Kuartal")["Prediksi Jumlah"].sum().reset_index()
@@ -272,14 +227,14 @@ if uploaded_file:
             )
             st.plotly_chart(fig_kuartal, use_container_width=True)
 
-            # Proporsi Tahun (jika multi-year)
+            # Proporsi Prediksi per Tahun (jika multi-year)
             if forecast_years > 1:
                 st.subheader("Proporsi Prediksi per Tahun")
                 fig_proporsi = px.pie(
                     yearly_income,
                     names="Tahun",
                     values="Prediksi Jumlah",
-                    title="Proporsi Prediksi per Tahun",
+                    title="Proporsi Prediksi Tahunan",
                     hole=0.3
                 )
                 st.plotly_chart(fig_proporsi, use_container_width=True)
