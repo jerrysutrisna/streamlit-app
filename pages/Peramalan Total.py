@@ -236,8 +236,8 @@ if uploaded_file:
             # Date Range Slider
             st.subheader("⏳ Pilih Rentang Tanggal Prediksi")
             
-            min_date = forecast_df["Tanggal"].min()
-            max_date = forecast_df["Tanggal"].max()
+            min_date = forecast_df["Tanggal"].min().to_pydatetime()
+            max_date = forecast_df["Tanggal"].max().to_pydatetime()
             
             date_range = st.slider(
                 "Rentang Tanggal:",
