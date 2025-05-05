@@ -13,7 +13,7 @@ uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
     st.write("Uploaded Data:")
-    st.dataframe(df)
+    st.dataframe(df.style.hide(axis="index"))  # Sembunyikan index bawaan
 
     required_columns = {'Jumlah', 'Nama Barang', 'Tanggal'}
     if required_columns.issubset(df.columns):
@@ -27,11 +27,12 @@ if uploaded_file:
 
         df_agg = df_cleaned.groupby('Nama Barang', as_index=False).agg({'Jumlah': 'sum'})
         top_items = df_agg.nlargest(5, 'Jumlah').reset_index(drop=True)
+
         st.write("5 Barang dengan Jumlah Unit Terbanyak:")
         top_display = top_items[['Nama Barang', 'Jumlah']].copy()
-        top_display.insert(0, 'No', range(1, len(top_display)+1))
+        top_display.insert(0, 'No', range(1, len(top_display) + 1))
         st.dataframe(top_display.style.hide(axis="index"))
-        
+
         fig, ax = plt.subplots(figsize=(6, 3))
         sns.lineplot(x=top_items['Nama Barang'], y=top_items['Jumlah'], marker='o', linestyle='-', ax=ax)
         plt.xticks(rotation=45, ha='right')
@@ -93,7 +94,6 @@ if uploaded_file:
                     forecast_values = forecast_object.predicted_mean
                     forecast_ci = forecast_object.conf_int()
 
-                    # Plot with confidence interval
                     fig, ax = plt.subplots(figsize=(10, 4))
                     ax.plot(product_data_resampled, label="Data Aktual")
                     ax.plot(forecast_values, label="Prediksi SARIMA", linestyle="dashed")
@@ -105,7 +105,6 @@ if uploaded_file:
                     ax.set_title(f"Prediksi SARIMA dengan Confidence Interval untuk {product}")
                     st.pyplot(fig)
 
-                    # Bar chart
                     forecast_df = pd.DataFrame({
                         'Minggu': forecast_values.index,
                         'Prediksi Jumlah': forecast_values.values.astype(int)
@@ -119,13 +118,11 @@ if uploaded_file:
                     ax.set_ylabel("Jumlah")
                     st.pyplot(fig)
 
-                    # Dataframe hasil prediksi
                     st.write(f"Tabel Hasil Prediksi SARIMA untuk {product}:")
                     forecast_df['Minggu'] = forecast_df['Minggu'].dt.strftime('%Y-%m-%d')
                     forecast_df_display = forecast_df.copy()
-                    forecast_df_display.insert(0, 'No', range(1, len(forecast_df_display)+1))
+                    forecast_df_display.insert(0, 'No', range(1, len(forecast_df_display) + 1))
                     st.dataframe(forecast_df_display.style.hide(axis="index"))
-                    
                 else:
                     st.write("Data tidak stasioner, peramalan tidak dilakukan.")
             else:
