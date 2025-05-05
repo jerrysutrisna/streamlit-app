@@ -219,11 +219,14 @@ if uploaded_file:
             st.subheader("📊 Dashboard Visualisasi Hasil Prediksi")
             combined_df = pd.concat([input_data["Jumlah"].rename("Jumlah Aktual"), forecast_df.set_index("Tanggal")["Prediksi Jumlah"]], axis=1).reset_index()
 
+            # Fix: Explicitly rename 'Tanggal' column for plotting
+            combined_df.rename(columns={"Tanggal": "Tanggal"}, inplace=True)
+
             # Filter columns starting from index 1
             combined_df_filtered = combined_df.iloc[:, 1:]
 
             fig_combined = px.line(
-                combined_df_filtered,
+                combined_df,
                 x="Tanggal",
                 y=["Jumlah Aktual", "Prediksi Jumlah"],
                 title="Aktual vs Prediksi Jumlah Barang",
@@ -297,46 +300,5 @@ if uploaded_file:
                 selectdirection="h"
             )
             st.plotly_chart(fig_campaign, use_container_width=True)
-
-            # Pendapatan Tahunan
-            forecast_df_filtered["Tahun"] = forecast_df_filtered["Tanggal"].dt.year
-            yearly_income = forecast_df_filtered.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
-
-            st.subheader("Pendapatan Prediksi Tahunan")
-            fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True, title="Pendapatan Prediksi Tahunan")
-            fig_year.update_layout(
-                hovermode="x unified",
-                dragmode="select",
-                selectdirection="h"
-            )
-            st.plotly_chart(fig_year, use_container_width=True)
-
-            # Distribusi Kuartal
-            st.subheader("Distribusi Prediksi per Kuartal")
-            forecast_df_filtered["Kuartal"] = forecast_df_filtered["Tanggal"].dt.to_period("Q").astype(str)
-            kuartal_summary = forecast_df_filtered.groupby("Kuartal")["Prediksi Jumlah"].sum().reset_index()
-
-            fig_kuartal = px.pie(
-                kuartal_summary,
-                names="Kuartal",
-                values="Prediksi Jumlah",
-                title="Distribusi Prediksi per Kuartal",
-                hole=0.4
-            )
-            fig_kuartal.update_layout(hovermode="closest")
-            st.plotly_chart(fig_kuartal, use_container_width=True)
-
-            # Proporsi Tahun
-            if forecast_years > 1:
-                st.subheader("Proporsi Prediksi per Tahun")
-                fig_proporsi = px.pie(
-                    yearly_income,
-                    names="Tahun",
-                    values="Prediksi Jumlah",
-                    title="Proporsi Prediksi per Tahun",
-                    hole=0.3
-                )
-                fig_proporsi.update_layout(hovermode="closest")
-                st.plotly_chart(fig_proporsi, use_container_width=True)
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"An error occurred: {e}")
