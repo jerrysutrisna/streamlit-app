@@ -9,7 +9,7 @@ import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
 
 st.set_page_config(page_title="Peramalan Total", page_icon="📊")
-st.title("Barang Forecasting with SARIMA")
+st.title("Peramalan Total")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
