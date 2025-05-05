@@ -96,8 +96,8 @@ if uploaded_file:
                     ax.plot(product_data_resampled, label="Data Aktual")
                     ax.plot(forecast_values, label="Prediksi SARIMA", linestyle="dashed")
                     ax.fill_between(forecast_values.index,
-                                    forecast_ci.iloc[:, 0],
-                                    forecast_ci.iloc[:, 1],
+                                    forecast_ci.iloc[:, 0].astype(int),
+                                    forecast_ci.iloc[:, 1].astype(int),
                                     color='lightblue', alpha=0.4, label="Confidence Interval")
                     ax.legend()
                     ax.set_title(f"Prediksi SARIMA dengan Confidence Interval untuk {product}")
@@ -106,7 +106,7 @@ if uploaded_file:
                     # Bar chart
                     forecast_df = pd.DataFrame({
                         'Minggu': forecast_values.index,
-                        'Prediksi Jumlah': forecast_values.values
+                        'Prediksi Jumlah': forecast_values.values.astype(int)
                     })
 
                     fig, ax = plt.subplots(figsize=(10, 4))
