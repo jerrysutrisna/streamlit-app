@@ -1,4 +1,4 @@
- import pandas as pd
+import pandas as pd
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,20 +18,25 @@ st.markdown("""
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
 
 if uploaded_file:
+    # Membaca file Excel
     df = pd.read_excel(uploaded_file)
     st.write("Uploaded Data:")
-    st.dataframe(df.style.hide(axis="index"))  # Sembunyikan index bawaan
+    st.dataframe(df.style.hide(axis="index"))  # Menyembunyikan index bawaan
 
     required_columns = {'Jumlah', 'Nama Barang', 'Tanggal'}
     if required_columns.issubset(df.columns):
+        # Membersihkan data
         df['Jumlah'] = df['Jumlah'].astype(str).str.replace(r'[^\d]', '', regex=True)
         df['Jumlah'] = pd.to_numeric(df['Jumlah'], errors='coerce').fillna(0).astype(int)
         df['Nama Barang'] = df['Nama Barang'].astype(str).str.strip().str.lower()
         df['Nama Barang'] = df['Nama Barang'].str.replace(r'\s+', ' ', regex=True)
-        df = df[~df['Nama Barang'].str.contains('pekerjaan')]
+        df = df[~df['Nama Barang'].str.contains('pekerjaan', case=False)]  # Menghapus kategori pekerjaan
         df['Tanggal'] = pd.to_datetime(df['Tanggal'], errors='coerce')
+
+        # Menghapus data yang tidak relevan
         df_cleaned = df[df['Jumlah'] > 0]
 
+        # Menampilkan 5 barang dengan jumlah unit terbanyak
         df_agg = df_cleaned.groupby('Nama Barang', as_index=False).agg({'Jumlah': 'sum'})
         top_items = df_agg.nlargest(5, 'Jumlah').reset_index(drop=True)
 
@@ -40,6 +45,7 @@ if uploaded_file:
         top_display.insert(0, 'No', range(1, len(top_display) + 1))
         st.dataframe(top_display.style.hide(axis="index"))
 
+        # Visualisasi 5 barang dengan jumlah unit terbanyak
         fig, ax = plt.subplots(figsize=(6, 3))
         sns.lineplot(x=top_items['Nama Barang'], y=top_items['Jumlah'], marker='o', linestyle='-', ax=ax)
         plt.xticks(rotation=45, ha='right')
@@ -49,11 +55,13 @@ if uploaded_file:
         plt.grid(axis='y', linestyle='--', alpha=0.7)
         st.pyplot(fig)
 
+        # Filter data untuk produk teratas
         top_products = df_cleaned[df_cleaned['Nama Barang'].isin(top_items['Nama Barang'])]
         top_products['Bulan'] = top_products['Tanggal'].dt.to_period('M')
         top_products_grouped = top_products.groupby(['Bulan', 'Nama Barang'])['Jumlah'].sum().reset_index()
         top_products_grouped['Bulan'] = pd.to_datetime(top_products_grouped['Bulan'].astype(str))
 
+        # Visualisasi tren permintaan bulanan
         fig, ax = plt.subplots(figsize=(10, 5))
         for product in top_items['Nama Barang']:
             product_data = top_products_grouped[top_products_grouped['Nama Barang'] == product]
@@ -67,12 +75,13 @@ if uploaded_file:
         plt.xticks(rotation=45)
         st.pyplot(fig)
 
+        # Analisis dan Peramalan SARIMA per Produk
         for product in top_items['Nama Barang']:
             product_data = top_products[top_products['Nama Barang'] == product].set_index('Tanggal')['Jumlah']
-            product_data_resampled = product_data.resample('W').sum()
+            product_data_resampled = product_data.resample('W').sum()  # Resampling mingguan
 
             st.write(f"\nUji ADF untuk {product} setelah resampling ke mingguan:")
-            if len(product_data_resampled.dropna()) > 10:
+            if len(product_data_resampled.dropna()) > 10:  # Cek cukup data untuk ADF
                 result = adfuller(product_data_resampled.dropna())
                 st.write(f"ADF Statistic: {result[0]}")
                 st.write(f"p-value: {result[1]}")
@@ -80,6 +89,7 @@ if uploaded_file:
                 if result[1] <= 0.05:
                     st.write("Data stasioner. Melanjutkan ke peramalan SARIMA.")
 
+                    # Plot ACF dan PACF
                     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
                     plot_acf(product_data_resampled.dropna(), ax=axes[0])
                     axes[0].set_title(f"ACF {product} (Mingguan)")
@@ -87,8 +97,9 @@ if uploaded_file:
                     axes[1].set_title(f"PACF {product} (Mingguan)")
                     st.pyplot(fig)
 
+                    # Menentukan parameter SARIMA
                     p, d, q = 1, 0, 1
-                    P, D, Q, m = 1, 0, 1, 52
+                    P, D, Q, m = 1, 0, 1, 52  # Musiman mingguan
 
                     model = SARIMAX(product_data_resampled,
                                     order=(p, d, q),
@@ -97,10 +108,12 @@ if uploaded_file:
                                     enforce_invertibility=False)
                     results = model.fit()
 
+                    # Peramalan untuk 12 minggu ke depan
                     forecast_object = results.get_forecast(steps=12)
                     forecast_values = forecast_object.predicted_mean
                     forecast_ci = forecast_object.conf_int()
 
+                    # Visualisasi prediksi SARIMA
                     fig, ax = plt.subplots(figsize=(10, 4))
                     ax.plot(product_data_resampled, label="Data Aktual")
                     ax.plot(forecast_values, label="Prediksi SARIMA", linestyle="dashed")
@@ -112,11 +125,13 @@ if uploaded_file:
                     ax.set_title(f"Prediksi SARIMA dengan Confidence Interval untuk {product}")
                     st.pyplot(fig)
 
+                    # Tabel hasil prediksi
                     forecast_df = pd.DataFrame({
                         'Minggu': forecast_values.index,
                         'Prediksi Jumlah': forecast_values.values.astype(int)
                     })
 
+                    # Visualisasi prediksi dalam bentuk bar chart
                     fig, ax = plt.subplots(figsize=(10, 4))
                     sns.barplot(x='Minggu', y='Prediksi Jumlah', data=forecast_df, palette='Blues_d', ax=ax)
                     ax.set_xticklabels(forecast_df['Minggu'].dt.strftime('%Y-%m-%d'), rotation=45)
@@ -125,6 +140,7 @@ if uploaded_file:
                     ax.set_ylabel("Jumlah")
                     st.pyplot(fig)
 
+                    # Menampilkan tabel prediksi
                     st.write(f"Tabel Hasil Prediksi SARIMA untuk {product}:")
                     forecast_df['Minggu'] = forecast_df['Minggu'].dt.strftime('%Y-%m-%d')
                     forecast_df_display = forecast_df.copy()
