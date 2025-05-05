@@ -9,9 +9,6 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults
 
-# Set konfigurasi halaman Streamlit
-st.set_page_config(page_title="Barang Forecasting", page_icon="📊")
-
 # Sidebar informasi
 with st.sidebar:
     st.image("logo.png", width=150)
