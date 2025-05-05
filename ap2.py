@@ -53,37 +53,3 @@ SARIMA merupakan pengembangan dari model ARIMA yang mempertimbangkan pola musima
 
 > Pastikan format tanggal valid dan kolom sesuai agar proses berjalan lancar.
 """)
-
-# =============================
-# 🔘 PILIH JENIS PERAMALAN
-# =============================
-
-st.markdown("### 🔍 Pilih Jenis Peramalan:")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    produk_clicked = st.button("📦 Peramalan Produk")
-
-with col2:
-    total_clicked = st.button("📊 Peramalan Total")
-
-# Gunakan session_state agar pilihan tetap tersimpan
-if produk_clicked:
-    st.session_state['menu'] = 'produk'
-elif total_clicked:
-    st.session_state['menu'] = 'total'
-
-# =============================
-# 🔄 TAMPILKAN MENU SESUAI PILIHAN
-# =============================
-if 'menu' in st.session_state:
-    if st.session_state['menu'] == 'produk':
-        st.success("✅ Anda memilih: Peramalan Produk")
-        st.markdown("Silakan lanjutkan dengan mengunggah data produk untuk diprediksi.")
-        # 👉 Tambahkan modul peramalan produk di sini
-
-    elif st.session_state['menu'] == 'total':
-        st.success("✅ Anda memilih: Peramalan Total")
-        st.markdown("Silakan lanjutkan dengan mengunggah data total permintaan untuk diprediksi.")
-        # 👉 Tambahkan modul peramalan total di sini
