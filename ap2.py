@@ -36,24 +36,14 @@ SARIMA merupakan pengembangan dari model ARIMA yang mempertimbangkan pola musima
 - Membantu pengambilan keputusan dalam manajemen stok dan logistik.
 
 ### 🔄 Alur Kerja Aplikasi:
-# Membuat flowchart dengan Graphviz
-dot = Digraph()
-
-dot.attr(rankdir='LR', bgcolor='white', style='filled', fillcolor='#F9FAFB')
-
-# Node
-dot.node("1", "📁 Unggah File Excel\n(Kolom: Tanggal & Jumlah)", shape='box', style='filled', fillcolor='#E0F7FA')
-dot.node("2", "🧹 Pra-pemrosesan Data\n(pembersihan jumlah, konversi tanggal)", shape='box', style='filled', fillcolor='#E8F5E9')
-dot.node("3", "📊 Visualisasi & Uji Stasioneritas", shape='box', style='filled', fillcolor='#FFF3E0')
-dot.node("4", "🔁 Plot ACF & PACF\n(pemilihan parameter SARIMA)", shape='box', style='filled', fillcolor='#F3E5F5')
-dot.node("5", "🤖 Pelatihan Model SARIMA", shape='box', style='filled', fillcolor='#EDE7F6')
-dot.node("6", "📈 Tampilkan Hasil Prediksi\n(tabel, grafik, dan unduh Excel)", shape='box', style='filled', fillcolor='#FFFDE7')
-
-# Edge
-dot.edges([("1", "2"), ("2", "3"), ("3", "4"), ("4", "5"), ("5", "6")])
-
-# Tampilkan di Streamlit
-st.graphviz_chart(dot)
+### 🔄 Alur Kerja Aplikasi:
+1. **Unggah file Excel** yang berisi dua kolom utama:
+   - Tanggal: tanggal transaksi atau pencatatan jumlah barang.
+   - Jumlah: jumlah barang (boleh mengandung karakter non-angka, akan dibersihkan otomatis).
+2. Data akan diproses, divisualisasikan, dan diuji stasioneritasnya.
+3. Aplikasi menampilkan **plot ACF dan PACF** sebagai panduan parameter SARIMA.
+4. Forecast akan dilakukan menggunakan model SARIMA yang telah dilatih sebelumnya.
+5. Hasil prediksi akan ditampilkan dalam bentuk **tabel, grafik garis, batang, dan area**, serta dapat diunduh sebagai file Excel.
 
 ### 📁 Format Data Contoh:
 | Tanggal     | Jumlah     |
