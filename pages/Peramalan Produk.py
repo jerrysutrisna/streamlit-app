@@ -86,15 +86,47 @@ if uploaded_file:
                     
                     forecast = results.forecast(steps=12)
                     
+                    # Line plot prediksi SARIMA
                     fig, ax = plt.subplots(figsize=(10, 4))
                     ax.plot(product_data_resampled, label="Data Aktual")
                     ax.plot(forecast, label="Prediksi SARIMA", linestyle="dashed")
                     plt.legend()
                     plt.title(f"Prediksi SARIMA untuk {product}")
                     st.pyplot(fig)
+
+                    # Tambahan: plot dengan confidence interval
+                    forecast_ci = results.get_forecast(steps=12).conf_int()
+                    fig, ax = plt.subplots(figsize=(10, 4))
+                    ax.plot(product_data_resampled, label="Data Aktual")
+                    ax.plot(forecast, label="Prediksi SARIMA", linestyle="dashed")
+                    ax.fill_between(forecast.index,
+                                    forecast_ci.iloc[:, 0],
+                                    forecast_ci.iloc[:, 1], color='lightblue', alpha=0.4,
+                                    label="Confidence Interval")
+                    plt.legend()
+                    plt.title(f"Prediksi SARIMA dengan Confidence Interval untuk {product}")
+                    st.pyplot(fig)
+
+                    # Bar chart mingguan hasil prediksi
+                    forecast_df = pd.DataFrame({
+                        'Minggu': forecast.index,
+                        'Prediksi Jumlah': forecast.values
+                    })
+                    fig, ax = plt.subplots(figsize=(10, 4))
+                    sns.barplot(x='Minggu', y='Prediksi Jumlah', data=forecast_df, palette='Blues_d', ax=ax)
+                    plt.xticks(rotation=45)
+                    plt.title(f"Bar Chart Prediksi Jumlah per Minggu untuk {product}")
+                    plt.xlabel("Minggu")
+                    plt.ylabel("Jumlah")
+                    st.pyplot(fig)
+
+                    # Tabel hasil prediksi
+                    st.write(f"Tabel Hasil Prediksi SARIMA untuk {product}:")
+                    st.dataframe(forecast_df)
+                    
                 else:
                     st.write("Data tidak stasioner, peramalan tidak dilakukan.")
             else:
                 st.write("Masih tidak cukup data untuk uji ADF.")
     else:
-        st.error("Kolom 'Jumlah', 'Nama Barang', dan/atau 'Tanggal' tidak ditemukan dalam file yang diunggah.")
+        st.error("Kolom 'Jumlah', 'Nama Barang', dan/atau 'Tanggal' tidak ditemukan dalam file yang diunggah."
