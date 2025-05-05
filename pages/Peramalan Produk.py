@@ -7,6 +7,9 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+# Judul
+st.title("Peramalan Permintaan Produk dengan SARIMA")
+
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
 
