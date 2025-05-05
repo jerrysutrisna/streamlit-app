@@ -7,8 +7,7 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-# Judul
-def halaman_peramalan_produk():
+    # Judul
     st.title("Analisis dan Visualisasi Peramalan Produk")
 
     st.markdown("""
