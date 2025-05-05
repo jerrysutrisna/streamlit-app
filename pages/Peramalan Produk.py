@@ -11,10 +11,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 st.title("Analisis dan Visualisasi Peramalan Produk")
 
 st.markdown("""
-### 🔍 Perbedaan Permintaan Produk vs Permintaan Total (SARIMA)
-
 **Permintaan Produk** merujuk pada jumlah barang atau unit tertentu yang diminta atau dibutuhkan oleh pelanggan dalam periode waktu tertentu. Fokusnya adalah pada pola permintaan aktual dari data historis yang tersedia, biasanya untuk satu jenis produk atau kelompok produk tertentu.
-
 """)
 
 # File uploader
