@@ -6,4 +6,3 @@ statsmodels
 openpyxl
 plotly
 seaborn
-graphviz
