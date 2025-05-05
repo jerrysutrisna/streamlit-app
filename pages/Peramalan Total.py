@@ -217,13 +217,13 @@ if uploaded_file:
 
             # Combine actual and forecast
             st.subheader("📊 Dashboard Visualisasi Hasil Prediksi")
-            combined_df = pd.concat([
-                input_data["Jumlah"].rename("Jumlah Aktual"),
-                forecast_df.set_index("Tanggal")["Prediksi Jumlah"]
-            ], axis=1).reset_index()
+            combined_df = pd.concat([input_data["Jumlah"].rename("Jumlah Aktual"), forecast_df.set_index("Tanggal")["Prediksi Jumlah"]], axis=1).reset_index()
+
+            # Filter columns starting from index 1
+            combined_df_filtered = combined_df.iloc[:, 1:]
 
             fig_combined = px.line(
-                combined_df,
+                combined_df_filtered,
                 x="Tanggal",
                 y=["Jumlah Aktual", "Prediksi Jumlah"],
                 title="Aktual vs Prediksi Jumlah Barang",
@@ -270,13 +270,14 @@ if uploaded_file:
 
             # Table
             st.subheader("📋 Tabel Hasil Prediksi")
-            st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.0f}"}))
+            forecast_df_filtered = forecast_df.iloc[:, 1:]  # Menghapus kolom pertama (indeks 0)
+            st.dataframe(forecast_df_filtered.style.format({"Prediksi Jumlah": "{:,.0f}"}))
 
             # Distribusi Prediksi Bulanan
             st.subheader("Status Prediksi Bulanan")
             lead_status_fig = px.bar(
-                forecast_df,
-                x=forecast_df["Tanggal"].dt.strftime("%b %Y"),
+                forecast_df_filtered,
+                x=forecast_df_filtered["Tanggal"].dt.strftime("%b %Y"),
                 y="Prediksi Jumlah",
                 title="Distribusi Prediksi per Bulan"
             )
@@ -289,7 +290,7 @@ if uploaded_file:
 
             # Trend Prediksi Barang
             st.subheader("Trend Prediksi Barang per Bulan")
-            fig_campaign = px.line(forecast_df, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi per Bulan")
+            fig_campaign = px.line(forecast_df_filtered, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi per Bulan")
             fig_campaign.update_layout(
                 hovermode="x unified",
                 dragmode="select",
@@ -297,9 +298,9 @@ if uploaded_file:
             )
             st.plotly_chart(fig_campaign, use_container_width=True)
 
-            # Pendapatan Tahunan (Akumulasi)
-            forecast_df["Tahun"] = forecast_df["Tanggal"].dt.year
-            yearly_income = forecast_df.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
+            # Pendapatan Tahunan
+            forecast_df_filtered["Tahun"] = forecast_df_filtered["Tanggal"].dt.year
+            yearly_income = forecast_df_filtered.groupby("Tahun")["Prediksi Jumlah"].sum().reset_index()
 
             st.subheader("Pendapatan Prediksi Tahunan")
             fig_year = px.line(yearly_income, x="Tahun", y="Prediksi Jumlah", markers=True, title="Pendapatan Prediksi Tahunan")
@@ -312,8 +313,8 @@ if uploaded_file:
 
             # Distribusi Kuartal
             st.subheader("Distribusi Prediksi per Kuartal")
-            forecast_df["Kuartal"] = forecast_df["Tanggal"].dt.to_period("Q").astype(str)
-            kuartal_summary = forecast_df.groupby("Kuartal")["Prediksi Jumlah"].sum().reset_index()
+            forecast_df_filtered["Kuartal"] = forecast_df_filtered["Tanggal"].dt.to_period("Q").astype(str)
+            kuartal_summary = forecast_df_filtered.groupby("Kuartal")["Prediksi Jumlah"].sum().reset_index()
 
             fig_kuartal = px.pie(
                 kuartal_summary,
@@ -325,7 +326,7 @@ if uploaded_file:
             fig_kuartal.update_layout(hovermode="closest")
             st.plotly_chart(fig_kuartal, use_container_width=True)
 
-            # Proporsi Tahun (jika multi-year)
+            # Proporsi Tahun
             if forecast_years > 1:
                 st.subheader("Proporsi Prediksi per Tahun")
                 fig_proporsi = px.pie(
@@ -337,6 +338,5 @@ if uploaded_file:
                 )
                 fig_proporsi.update_layout(hovermode="closest")
                 st.plotly_chart(fig_proporsi, use_container_width=True)
-
     except Exception as e:
-        st.error(f"Terjadi kesalahan saat memproses file: {e}")
+        st.error(f"Error: {e}")
