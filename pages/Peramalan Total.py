@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
 
-st.title("Peramalan Total")
+st.title("Analisis dan Visualisasi Peramalan Total")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
