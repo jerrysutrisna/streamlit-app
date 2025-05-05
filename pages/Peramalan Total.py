@@ -10,6 +10,10 @@ from statsmodels.tsa.stattools import adfuller
 
 st.title("Analisis dan Visualisasi Peramalan Total")
 
+st.markdown("""
+**Permintaan Total (SARIMA)** adalah hasil dari proses peramalan berdasarkan model SARIMA, yang memproyeksikan jumlah permintaan ke masa depan dengan mempertimbangkan tren, musim (seasonality), dan fluktuasi historis dalam data. Permintaan total ini mencerminkan estimasi dari **seluruh permintaan** yang mungkin terjadi berdasarkan pola masa lalu, bukan hanya angka aktual dari data yang sudah terjadi.
+""")
+
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
 
