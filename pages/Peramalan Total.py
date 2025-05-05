@@ -263,8 +263,7 @@ if uploaded_file:
             # 📋 TABEL HASIL PREDIKSI (dengan kolom No)
             st.subheader("📋 Tabel Hasil Prediksi")
             tabel_prediksi = forecast_df.copy().reset_index(drop=True)
-            tabel_prediksi.index += 1
-            tabel_prediksi.insert(0, "No", tabel_prediksi.index)
+            tabel_prediksi.insert(0, "No", range(1, len(tabel_prediksi) + 1))
             st.dataframe(tabel_prediksi.style.format({"Prediksi Jumlah": "{:,.0f}"}))
 
             # Distribusi Prediksi Bulanan
