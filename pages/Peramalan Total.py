@@ -265,7 +265,7 @@ if uploaded_file:
             tabel_prediksi = forecast_df.copy().reset_index(drop=True)
             tabel_prediksi.insert(0, "No", range(1, len(tabel_prediksi) + 1))
             st.dataframe(tabel_prediksi.style.format({"Prediksi Jumlah": "{:,.0f}"}))
-            st.dataframe(forecast_df_display.style.hide(axis="index"))
+            st.dataframe(tabel_prediksi.style.hide(axis="index"))
 
             # Distribusi Prediksi Bulanan
             st.subheader("Status Prediksi Bulanan")
