@@ -10,6 +10,79 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults
 
+# Fungsi untuk menambahkan CSS berdasarkan pilihan tema
+def set_theme(theme_choice):
+    if theme_choice == "Gelap":
+        # CSS untuk tema gelap
+        st.markdown(
+            """
+            <style>
+            body {
+                background-color: #121212;
+                color: white;
+            }
+            .streamlit-expanderHeader {
+                color: white;
+            }
+            .stButton>button {
+                background-color: #1e1e1e;
+                color: white;
+                border: 1px solid #333;
+            }
+            .stTextInput>div>input {
+                background-color: #2a2a2a;
+                color: white;
+            }
+            .stSelectbox>div>div>input {
+                background-color: #2a2a2a;
+                color: white;
+            }
+            .stRadio>div>div>label {
+                color: white;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        # CSS untuk tema terang
+        st.markdown(
+            """
+            <style>
+            body {
+                background-color: #ffffff;
+                color: black;
+            }
+            .streamlit-expanderHeader {
+                color: black;
+            }
+            .stButton>button {
+                background-color: #f0f0f0;
+                color: black;
+                border: 1px solid #ccc;
+            }
+            .stTextInput>div>input {
+                background-color: #ffffff;
+                color: black;
+            }
+            .stSelectbox>div>div>input {
+                background-color: #ffffff;
+                color: black;
+            }
+            .stRadio>div>div>label {
+                color: black;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+# Sidebar untuk memilih tema
+theme_choice = st.sidebar.radio("Pilih Tema", ("Terang", "Gelap"))
+
+# Terapkan tema sesuai pilihan
+set_theme(theme_choice)
+
 # Sidebar informasi
 with st.sidebar:
     st.image("logo.png", width=150)
