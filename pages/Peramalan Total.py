@@ -97,12 +97,9 @@ if uploaded_file:
 
         # Plot ACF & PACF Interaktif
         st.subheader("Plot ACF & PACF")
-
-        # Hitung nilai ACF dan PACF
         acf_values = sm.tsa.stattools.acf(input_data["Jumlah"], nlags=40)
         pacf_values = sm.tsa.stattools.pacf(input_data["Jumlah"], nlags=40)
 
-        # Buat figure ACF
         acf_fig = px.bar(
             x=list(range(len(acf_values))),
             y=acf_values,
@@ -116,7 +113,6 @@ if uploaded_file:
             showlegend=False
         )
 
-        # Buat figure PACF
         pacf_fig = px.bar(
             x=list(range(len(pacf_values))),
             y=pacf_values,
@@ -130,7 +126,6 @@ if uploaded_file:
             showlegend=False
         )
 
-        # Tampilkan 2 grafik sejajar
         col1, col2 = st.columns(2)
         with col1:
             st.plotly_chart(acf_fig, use_container_width=True)
@@ -165,12 +160,9 @@ if uploaded_file:
                 )
                 model_fit = sarima_model.fit(disp=False)
                 st.success("Model SARIMA berhasil dibuat.")
-
-                # Save model
                 with open(MODEL_FILE, "wb") as f:
                     pickle.dump(model_fit, f)
                 st.success(f"Model baru berhasil disimpan sebagai {MODEL_FILE}.")
-
             except Exception as train_err:
                 st.error(f"Gagal membuat model SARIMA: {train_err}")
                 st.stop()
@@ -268,9 +260,12 @@ if uploaded_file:
             )
             st.plotly_chart(fig_area, use_container_width=True)
 
-            # Table
+            # 📋 TABEL HASIL PREDIKSI (dengan kolom No)
             st.subheader("📋 Tabel Hasil Prediksi")
-            st.dataframe(forecast_df.style.format({"Prediksi Jumlah": "{:,.0f}"}))
+            tabel_prediksi = forecast_df.copy().reset_index(drop=True)
+            tabel_prediksi.index += 1
+            tabel_prediksi.insert(0, "No", tabel_prediksi.index)
+            st.dataframe(tabel_prediksi.style.format({"Prediksi Jumlah": "{:,.0f}"}))
 
             # Distribusi Prediksi Bulanan
             st.subheader("Status Prediksi Bulanan")
