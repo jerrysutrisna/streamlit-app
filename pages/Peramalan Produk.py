@@ -21,6 +21,7 @@ if uploaded_file:
         df['Jumlah'] = pd.to_numeric(df['Jumlah'], errors='coerce').fillna(0).astype(int)
         df['Nama Barang'] = df['Nama Barang'].astype(str).str.strip().str.lower()
         df['Nama Barang'] = df['Nama Barang'].str.replace(r'\s+', ' ', regex=True)
+        df = df[~df['Nama Barang'].str.contains('pekerjaan')]
         df['Tanggal'] = pd.to_datetime(df['Tanggal'], errors='coerce')
         df_cleaned = df[df['Jumlah'] > 0]
         
