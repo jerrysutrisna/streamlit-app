@@ -223,9 +223,9 @@ if uploaded_file:
             combined_df_filtered = combined_df.iloc[:, 1:]
 
             fig_combined = px.line(
-                combined_df_filtered,
-                x="Tanggal",
-                y=["Jumlah Aktual", "Prediksi Jumlah"],
+                combined_df,
+                x="Tanggal",  # Pastikan Tanggal ada di sumbu x
+                y=["Jumlah Aktual", "Prediksi Jumlah"],  # Memasukkan kedua kolom yang sesuai ke sumbu y
                 title="Aktual vs Prediksi Jumlah Barang",
                 markers=True
             )
@@ -275,11 +275,9 @@ if uploaded_file:
 
             # Distribusi Prediksi Bulanan
             st.subheader("Status Prediksi Bulanan")
-            forecast_df_filtered["Bulan"] = forecast_df_filtered["Tanggal"].dt.strftime("%b %Y")  # Format bulan dan tahun
-
             lead_status_fig = px.bar(
                 forecast_df_filtered,
-                x="Bulan",  # Ganti x dengan kolom Bulan yang baru saja kita buat
+                x=forecast_df_filtered["Tanggal"].dt.strftime("%b %Y"),
                 y="Prediksi Jumlah",
                 title="Distribusi Prediksi per Bulan"
             )
@@ -289,16 +287,6 @@ if uploaded_file:
                 selectdirection="h"
             )
             st.plotly_chart(lead_status_fig, use_container_width=True)
-
-            # Trend Prediksi Barang
-            st.subheader("Trend Prediksi Barang per Bulan")
-            fig_campaign = px.line(forecast_df_filtered, x="Tanggal", y="Prediksi Jumlah", title="Trend Prediksi per Bulan")
-            fig_campaign.update_layout(
-                hovermode="x unified",
-                dragmode="select",
-                selectdirection="h"
-            )
-            st.plotly_chart(fig_campaign, use_container_width=True)
 
     except Exception as e:
         st.error(f"Terjadi kesalahan: {e}")
