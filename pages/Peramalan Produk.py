@@ -8,7 +8,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 # Judul
-st.title("Analisis dan Visualisasi Peramalan Permintaan Produk")
+st.title("Analisis dan Visualisasi Peramalan Produk")
 
 # File uploader
 uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
