@@ -219,14 +219,11 @@ if uploaded_file:
             st.subheader("📊 Dashboard Visualisasi Hasil Prediksi")
             combined_df = pd.concat([input_data["Jumlah"].rename("Jumlah Aktual"), forecast_df.set_index("Tanggal")["Prediksi Jumlah"]], axis=1).reset_index()
 
-            # Fix: Explicitly rename 'Tanggal' column for plotting
-            combined_df.rename(columns={"Tanggal": "Tanggal"}, inplace=True)
-
             # Filter columns starting from index 1
             combined_df_filtered = combined_df.iloc[:, 1:]
 
             fig_combined = px.line(
-                combined_df,
+                combined_df_filtered,
                 x="Tanggal",
                 y=["Jumlah Aktual", "Prediksi Jumlah"],
                 title="Aktual vs Prediksi Jumlah Barang",
@@ -278,9 +275,11 @@ if uploaded_file:
 
             # Distribusi Prediksi Bulanan
             st.subheader("Status Prediksi Bulanan")
+            forecast_df_filtered["Bulan"] = forecast_df_filtered["Tanggal"].dt.strftime("%b %Y")  # Format bulan dan tahun
+
             lead_status_fig = px.bar(
                 forecast_df_filtered,
-                x=forecast_df_filtered["Tanggal"].dt.strftime("%b %Y"),
+                x="Bulan",  # Ganti x dengan kolom Bulan yang baru saja kita buat
                 y="Prediksi Jumlah",
                 title="Distribusi Prediksi per Bulan"
             )
@@ -300,5 +299,6 @@ if uploaded_file:
                 selectdirection="h"
             )
             st.plotly_chart(fig_campaign, use_container_width=True)
+
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"Terjadi kesalahan: {e}")
