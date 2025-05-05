@@ -26,7 +26,7 @@ with st.sidebar:
     """)
 
 # Judul
-st.title("Peramalan Permintaan Produk dengan SARIMA")
+st.title("Peramalan Permintaan dengan SARIMA")
 
 st.markdown("""
 ### 🧠 Tentang Model SARIMA:
