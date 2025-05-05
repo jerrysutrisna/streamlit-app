@@ -8,6 +8,7 @@ from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 # Judul
+def halaman_peramalan_produk():
 st.title("Analisis dan Visualisasi Peramalan Produk")
 
 st.markdown("""
