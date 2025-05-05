@@ -8,7 +8,6 @@ import plotly.graph_objects as go
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
 
-st.set_page_config(page_title="Peramalan Total", page_icon="📊")
 st.title("Peramalan Total")
 
 # File uploader
