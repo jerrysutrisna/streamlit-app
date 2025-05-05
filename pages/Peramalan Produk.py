@@ -28,7 +28,7 @@ if uploaded_file:
         df_agg = df_cleaned.groupby('Nama Barang', as_index=False).agg({'Jumlah': 'sum'})
         top_items = df_agg.nlargest(5, 'Jumlah').reset_index(drop=True)
         st.write("5 Barang dengan Jumlah Unit Terbanyak:")
-        st.dataframe(top_items[['Nama Barang', 'Jumlah']])
+        st.dataframe(top_items[['Nama Barang', 'Jumlah']].reset_index(drop=True).rename_axis('No').reset_index().assign(No=lambda df: df['No'] + 1))
 
         fig, ax = plt.subplots(figsize=(6, 3))
         sns.lineplot(x=top_items['Nama Barang'], y=top_items['Jumlah'], marker='o', linestyle='-', ax=ax)
@@ -120,7 +120,7 @@ if uploaded_file:
                     # Dataframe hasil prediksi
                     st.write(f"Tabel Hasil Prediksi SARIMA untuk {product}:")
                     forecast_df['Minggu'] = forecast_df['Minggu'].dt.strftime('%Y-%m-%d')
-                    st.dataframe(forecast_df)
+                    st.dataframe(forecast_df.reset_index(drop=True).rename_axis('No').reset_index().assign(No=lambda df: df['No'] + 1))
 
                 else:
                     st.write("Data tidak stasioner, peramalan tidak dilakukan.")
