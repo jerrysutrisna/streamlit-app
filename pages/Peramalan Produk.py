@@ -5,7 +5,6 @@ import plotly.express as px
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-from st_aggrid import AgGrid, GridOptionsBuilder
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 
@@ -42,7 +41,7 @@ if uploaded_file:
         st.write("5 Barang dengan Jumlah Unit Terbanyak:")
         top_display = top_items[['Nama Barang', 'Jumlah']].copy()
         top_display.insert(0, 'No', range(1, len(top_display) + 1))
-        AgGrid(top_display, fit_columns_on_grid_load=True)
+        st.dataframe(top_display)
 
         fig_top = px.bar(top_items,
                          x='Nama Barang',
@@ -229,8 +228,4 @@ if uploaded_file:
                 forecast_df_display.insert(0, 'No', range(1, len(forecast_df_display) + 1))
 
                 st.write(f"Tabel Hasil Prediksi SARIMA untuk {product}:")
-                gb = GridOptionsBuilder.from_dataframe(forecast_df_display)
-                gb.configure_pagination()
-                gb.configure_default_column(groupable=True, editable=False, filterable=True)
-                gridOptions = gb.build()
-                AgGrid(forecast_df_display, gridOptions=gridOptions, theme="blue", fit_columns_on_grid_load=True)
+                st.dataframe(forecast_df_display)
