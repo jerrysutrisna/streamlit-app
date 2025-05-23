@@ -6,6 +6,7 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 import statsmodels.api as sm
+import gzip
 from statsmodels.tsa.stattools import adfuller
 
 st.title("Analisis dan Visualisasi Peramalan Total")
@@ -32,6 +33,8 @@ if uploaded_file:
 
         # Clean and prepare
         input_data["Jumlah"] = input_data["Jumlah"].astype(str).str.replace(r'\D', '', regex=True).astype(float)
+        # Tambahkan transformasi log untuk stabilisasi variansi
+        input_data["Jumlah_Log"] = np.log1p(input_data["Jumlah"])
         input_data.dropna(inplace=True)
         input_data["Tanggal"] = pd.to_datetime(input_data["Tanggal"])
         input_data = input_data.sort_values("Tanggal")
@@ -46,9 +49,9 @@ if uploaded_file:
 
         # Map model files
         model_map = {
-            2022: "modelsarima2022.pkl",
-            2023: "modelsarima2023.pkl",
-            2024: "modelsarima2024.pkl"
+            2022: "modelsarima2022.pkl.gz",
+            2023: "modelsarima2023.pkl.gz",
+            2024: "modelsarima2024.pkl.gz"
         }
 
         year_options = list(model_map.keys())
@@ -147,7 +150,7 @@ if uploaded_file:
 
         # Load or train model
         if os.path.exists(MODEL_FILE):
-            with open(MODEL_FILE, "rb") as f:
+            with gzip.open(MODEL_FILE, "rb") as f:
                 model_fit = pickle.load(f)
             st.success(f"Model {MODEL_FILE} berhasil dimuat.")
         else:
@@ -155,7 +158,7 @@ if uploaded_file:
             st.info("Model akan dibuat dari data yang tersedia dengan parameter SARIMA yang Anda masukkan.")
             try:
                 sarima_model = sm.tsa.statespace.SARIMAX(
-                    input_data["Jumlah"],
+                    input_data["Jumlah_Log"],
                     order=(p, d, q),
                     seasonal_order=(P, D, Q, s),
                     enforce_stationarity=False,
@@ -177,14 +180,18 @@ if uploaded_file:
 
         if st.button("Predict"):
             forecast_result = model_fit.get_forecast(steps=input_periods)
-            forecast_mean = forecast_result.predicted_mean
+            forecast_mean_log = forecast_result.predicted_mean
+            forecast_mean = np.expm1(forecast_mean_log)  # Kembali ke skala jumlah barang
             last_date = input_data.index[-1]
             forecast_index = pd.date_range(start=last_date, periods=input_periods + 1, freq='M')[1:]
 
             forecast_df = pd.DataFrame({
                 'Tanggal': forecast_index,
+                'Prediksi_Log': forecast_mean_log.values,
                 'Prediksi Jumlah': np.round(forecast_mean.values).astype(int)
             })
+
+            st.dataframe(forecast_df)
 
             st.subheader("📈 Hasil Peramalan")
             fig_forecast = px.line(
@@ -210,38 +217,60 @@ if uploaded_file:
             with open(output_filename, "rb") as output_file:
                 st.download_button("Download Forecast Results", output_file, file_name=output_filename)
 
-            # Combine actual and forecast
-            st.subheader("📊 Dashboard Visualisasi Hasil Prediksi")
-            combined_df = pd.concat([
-                input_data["Jumlah"].rename("Jumlah Aktual"),
-                forecast_df.set_index("Tanggal")["Prediksi Jumlah"]
+            # Dashboard Prediksi dalam Skala Log
+            st.subheader("📊 Dashboard Visualisasi Hasil Prediksi (Log)")
+
+            # Gabungkan data aktual dan prediksi (log)
+            combined_log_df = pd.concat([
+                input_data["Jumlah_Log"].rename("Log Aktual"),
+                forecast_df.set_index("Tanggal")["Prediksi_Log"].rename("Log Prediksi")
             ], axis=1).reset_index()
 
-            fig_combined = px.line(
-                combined_df,
+            # Plot log aktual vs log prediksi
+            fig_combined_log = px.line(
+                combined_log_df,
                 x="Tanggal",
-                y=["Jumlah Aktual", "Prediksi Jumlah"],
-                title="Aktual vs Prediksi Jumlah Barang",
+                y=["Log Aktual", "Log Prediksi"],
+                title="Aktual vs Prediksi (Log) Jumlah Barang",
                 markers=True
             )
-            fig_combined.update_layout(
+            fig_combined_log.update_layout(
                 xaxis_title="Tanggal",
-                yaxis_title="Jumlah",
+                yaxis_title="Log Jumlah",
                 hovermode="x unified",
                 dragmode="select",
                 selectdirection="h"
             )
-            st.plotly_chart(fig_combined, use_container_width=True)
+            st.plotly_chart(fig_combined_log, use_container_width=True)
 
             # KPI Metrics
             total_prediksi = forecast_df["Prediksi Jumlah"].sum()
             mean_prediksi = forecast_df["Prediksi Jumlah"].mean()
-            growth_rate = ((forecast_df["Prediksi Jumlah"].iloc[-1] - forecast_df["Prediksi Jumlah"].iloc[0]) / forecast_df["Prediksi Jumlah"].iloc[0]) * 100
+            awal = forecast_df["Prediksi Jumlah"].iloc[0]
+            akhir = forecast_df["Prediksi Jumlah"].iloc[-1]
+
+            # Ambil nilai awal dan akhir prediksi yang bukan nol
+            non_zero_preds = forecast_df[forecast_df["Prediksi Jumlah"] > 0]
+            if not non_zero_preds.empty:
+                awal = non_zero_preds["Prediksi Jumlah"].iloc[0]
+                akhir = non_zero_preds["Prediksi Jumlah"].iloc[-1]
+                growth_rate = ((akhir - awal) / awal) * 100
+                delta_label = f"{growth_rate:.2f}%"
+                growth_display = f"{growth_rate:.2f}%"
+            else:
+                awal = akhir = growth_rate = 0
+                delta_label = "N/A"
+                growth_display = "N/A"
 
             col1, col2, col3 = st.columns(3)
             col1.metric("Total Prediksi", f"{total_prediksi:,.0f}")
             col2.metric("Rata-rata / bulan", f"{mean_prediksi:,.0f}")
-            col3.metric("Growth Rate", f"{growth_rate:.2f}%", delta=f"{growth_rate:.2f}%")
+            col3.metric(
+                label="Growth Rate",
+                value=f"{growth_rate:.2f}%" if awal != 0 else "N/A",
+                delta=delta_label,
+                delta_color="normal" if growth_rate == 0 else ("inverse" if growth_rate < 0 else "off")
+            )
 
             # Bar Chart
             st.subheader("📊 Bar Chart")
